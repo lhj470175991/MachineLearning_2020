@@ -1,0 +1,133 @@
+1.
+	 先使用R语言绘制ROC曲线:
+
+> library("pROC")
+> mydata<-read.table("C:\\Users \\Desktop\\fishing.csv",header=TRUE,sep=",",stringsAsFactors=FALSE)
+> roc(mydata$label, mydata$score, plot=TRUE, print.thres=TRUE, print.auc=TRUE)
+绘制得到ROC曲线：
+模型1的ROC 曲线
+ 
+模型1的ROC 曲线
+ 
+模型2的ROC 曲线
+
+
+
+绘制P-R曲线
+R代码如下：
+decision<-mydata[,7]
+> label<-mydata[,6]
+> for(i in 1:ngrids)
+{
+    p0[i] <- i/ngrids
+   pred_label <- 1*(decision > p0[i])
+   TPR[i] <- sum(pred_label * label) / sum(label)
+  FPR[i] <- sum(pred_label * (1-label)) / sum(1-label)
+ }
+> pos.decision <- decision[which(label == 1)]
+> neg.decision <- decision[which(label == 0)]
+> plot(FPR, TPR, col=4,lwd=5, type="l")
+
+得到P-R曲线如下：
+
+ 
+
+模型一的P-R曲线
+
+ 
+由ROC曲线计算得经验AUC面积为：
+模型一：0.702  ，模型二： 0.608
+
+整体预测效果良好，模型一优于模型二。
+阙值的选择上，模型一为1.144，模型二为1.811，在选择阙值时我们选择真正例率较高，而假正例率不太高且马上面临假正例率增加的点。
+
+B.
+真实情况	预测结果
+	正例	反例
+正例	(TP)    28	(FN)   30
+反例	(FP)    11	(TN)  181
+模型一的混淆矩阵
+
+真实情况	预测结果
+	正例	反例
+正例	(TP)    19	(FN)   39
+反例	(FP)    29	(TN)   163
+模型二的混淆矩阵
+
+C.
+代价曲线如下
+ 
+模型一的代价曲线
+ 
+模型二的代价曲线
+
+由图像可看出，模型一最小线段下方围成的面积远远小于模型二，故模型一的预测效果优于模型二。
+
+2.
+A.
+思路：
+利用五个已经分好的测试集，每次选择相应的阙值，然后计算出宏查全率和微查全率宏查准率和微查准率。
+使用R计算宏、微查全率和查准率
+代码如下
+mydata<-read.table("C:\\Users\\Desktop\\fishing.csv",header=TRUE,sep=",",stringsAsFactors=FALSE)
+roc(mydata$label, mydata$score2, plot=TRUE, print.thres=TRUE, print.auc=TRUE)
+> decision<-mydata[,7]
+> label<-mydata[,1]
+ngrids <- 100
+P <- rep(0, ngrids)
+R <- rep(0, ngrids)
+p0 <- rep(0, ngrids)
+A <- rep(0, ngrids)
+for(i in 0:ngrids)
+{
+  p0[i] <- i/ngrids
+  pred_label <- 1*(decision > p0[i])
+  R[i] <- sum(pred_label * label) / sum(label)
+  P[i] <- sum(pred_label * label) / sum(pred_label)
+  A[i] <- sum((pred_label == label)*1)/nrow(mydata)
+}
+plot(R, P, col=4,lwd=5, type="l",xlab="Recall",ylab="Precision",
+     main="PR Curve")
+grid(5, 5, lwd = 1)
+accuracy <- max(A)
+计算得到宏查全率
+Macro-R1=0.8186667    macro-R2=0.5025417     macro-R3=0.506125
+宏查准率
+Macro-P1= 0.8191423    macro-P2=0.4920148     macro-P3=0.5762611
+微查全率
+Micro-R1=0.795684      micro-R2=0.498532      micro-R3=0.502315
+微查准率
+Micro-P1=0.815463      micro-P2=0.482942      micro-P3=0.563940
+
+B.
+利用已经得到的混淆矩阵数据
+画出相应的代价曲线如下：
+ 
+模型一代价曲线
+
+C.
+以模型一为例进行检验分析
+若采用二项检验binomial检验误差：若令假设误差为0.15
+错误率最高的那一组94个测试样本中有21个分类错误
+而1-pbinom(21，94，0.15)=1-0.9794=0.2
+如果α>=0.2则可以认为模型一的整个泛化误差是在0.15以内的
+若采用交叉验证t检验
+
+先分别计算出五次测试的错误率
+ε_1="0.223 ，" ε_1="0.2021， " ε_3="0.1852"  〖，ε〗_4="0.13" 
+然后计算出这几次实验的错误率的方差和均值
+μ_ε=1/5 ∑▒ε_k =0.1803
+σ^2=1/4 ∑_(k=1)^5▒〖(ε_k-μ)〗^2="0.0034" 
+统计检验量T=(√5(μ_ε-ε_0))/σ服从自由度为4的t分布
+P(T>t_α (K-1))<α
+可以在95%内接受泛化误差小于0.15的假设
+评价：其两种方法都能得到近乎相同的估计结果，在k折交叉验证法下，通常情况下会因为样本有限，使得不同轮次的训练集产生一定程度的重叠，各组之间无法做到完全独立。而二项检验关注是其中误差的最大值，这可能对评估结果造成偏差。
+
+C.
+根据上述以及以下的ROC曲线
+ 
+ 
+
+ 
+从图像上看,模型一明显优于模型二和模型三。
+
