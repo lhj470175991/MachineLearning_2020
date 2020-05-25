@@ -1,0 +1,123 @@
+import numpy as np
+import random
+file = 'Autodata.csv'
+mpg1=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(1),unpack=True)
+horsepower=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(4),unpack=True)
+mpg2=40-0.15*horsepower
+a=mpg1-mpg2
+a=np.multiply(a,a)
+k=0
+for j in range(1,101):
+t=0
+for i in range(1,79):
+t=t+random.choice(a)
+t=t/78
+k=k+t
+k=k/100
+
+得到最终结果:泛化误差为24.6283478597123
+
+(b)
+思路：
+按照题意，将数据集划分为20个大小相似的集合
+采用了随机不放回抽样,每次选取一个作为测试集，剩余为训练集
+如此将每一组都选为测试集一次，共进行二十次，误差取平均值
+再将实验重复进行p=10次
+
+Python程序如下：
+import numpy as np
+import random
+file = 'Autodata.csv'
+mpg1=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(1),unpack=True)
+horsepower=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(4),unpack=True)
+mpg2=40-0.15*horsepower
+c=mpg1-mpg2
+c=np.multiply(c,c)
+s=0
+for j in range(1,11):
+    random.shuffle(c)
+    t=0
+    for i in range(1,21):
+        t=t+c[i]
+    t=t/20
+    s=s+t
+s=s/10
+
+最终结果：泛化误差为24.024837500000004
+
+(c)
+思路：
+先对数据进行处理
+数据框中新增数据项mpg01，并计算出估计值x
+由公式中概率p计算期望
+按照留出法的比例
+每次随机抽取392*0.2=78个样本数据作为测试集
+重复100次随机划分，重复进行实验，算得均方误差
+
+Python代码如下：
+import numpy as np
+import random
+import math
+file = 'Autodata.csv'
+mpg=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(1),unpack=True)
+weight=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(5),unpack=True)
+mpg2=np.sort(mpg)
+mpg3=mpg2[294]
+mpg01=(mpg>mpg3)
+x=np.linspace(1,392,392)
+for i in range(1,392):
+    x[i]=math.exp(3.85-0.01*weight[i])/(1+math.exp(3.85-0.01*weight[i]))
+x=x-mpg01
+x=np.multiply(x,x)
+s=0
+for j in range(1,101):
+    t=0
+    for i in range(1,79):
+        t=t+random.choice(x)           
+    t=t/78
+    s=s+t
+s=s/100
+最终结果：泛化误差为0.24012809271210575
+
+(d)
+思路：
+对数据进行预处理
+发现数据框中新增数据项mpg01，并计算出估计值x
+由公式中概率p计算期望
+按照题意，将数据集划分为若干个大小相当的集合
+采用了随机不放回抽样，每组19个样本，划分为20组
+每次选取一个作为测试集，剩余为训练集
+如此将每一组都选为测试集一次，共进行二十次，误差取平均值
+再将实验重复进行p=10次
+Python代码如下：
+import numpy as np
+import random
+import math
+file = 'Autodata.csv'
+mpg=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(1),unpack=True)
+weight=np.loadtxt(file,dtype=np.float,skiprows=1,delimiter=',',usecols=(5),unpack=True)
+mpg2=np.sort(mpg)
+mpg3=mpg2[294]
+mpg01=(mpg>mpg3)
+x=np.linspace(1,392,392)
+for i in range(1,392):
+    x[i]=math.exp(3.85-0.01*weight[i])/(1+math.exp(3.85-0.01*weight[i]))
+x=x-mpg01
+x=np.multiply(x,x)
+s=0
+for j in range(1,11):
+    random.shuffle(c)
+    t=0
+    for i in range(1,21):
+        t=t+c[i]
+    t=t/20
+    s=s+t
+s=s/10
+   
+泛化误差结果：0.243889966886048233
+
+(e)
+   由以上结果可以看出，在这类问题上，分层抽样这种抽样方式表现比较优异，采用分层抽样的方式能较大程度上减少训练集与测试集样本分布不均造成的影响，在上述问题的考虑上，留出法与交叉验证法在泛化误差的计算结果上并没有较大区别。
+
+(f)
+从500正反例中分别选出150反例用于留出法评估，所以可能取法应该是(C_500^150 )^2种
